@@ -112,9 +112,16 @@
         <input type="text" class="search-input" placeholder="Meklēt ierakstus...">
     </div>
 
+    <div class="create-post-container" style="text-align: center; margin-bottom: 20px;">
+        <form id="create-post-form" onsubmit="createPost(event)" style="display: flex; max-width: 800px; margin: 0 auto; gap: 10px;">
+            <input type="text" id="post-content" class="search-input" style="margin: 0;" placeholder="Rakstīt jaunu ierakstu..." required>
+            <button type="submit" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">Publicēt</button>
+        </form>
+    </div>
+
     <ul>
         <?php foreach ($posts as $post) : ?>
-            <li>
+            <li data-post-id="<?= $post['id'] ?>">
                 <?= $post['content'] ?>
                 <div class="post-options">
                     <button class="options-button" onclick="toggleDropdown(this)">...</button>
@@ -146,14 +153,103 @@
         }
 
         function editPost(button) {
-            alert('Edit functionality will be added here.');
+            const postElement = button.closest('li');
+            const currentContent = postElement.firstChild.textContent.trim();
+            const postId = postElement.dataset.postId;
+
+            const newContent = prompt('Edit post:', currentContent);
+            if (newContent !== null && newContent !== currentContent) {
+                fetch(`/blog/sprinkle?id=${postId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ content: newContent })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.text().then(text => {
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            return text;
+                        }
+                    });
+                })
+                .then(() => {
+                    window.location.reload();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to update post. Please try again.');
+                });
+            }
         }
 
         function deletePost(button) {
-            alert('Delete functionality will be added here.');
+            if (confirm('Are you sure you want to delete this post?')) {
+                const postElement = button.closest('li');
+                const postId = postElement.dataset.postId;
+
+                fetch(`/blog/yeet?id=${postId}`, {
+                    method: 'POST'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.text().then(text => {
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            return text;
+                        }
+                    });
+                })
+                .then(() => {
+                    window.location.reload();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to delete post. Please try again.');
+                });
+            }
+        }
+        function createPost(event) {
+            event.preventDefault();
+            const content = document.getElementById('post-content').value;
+
+            fetch('/blog/bake', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ content: content })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        return text;
+                    }
+                });
+            })
+            .then(() => {
+                document.getElementById('post-content').value = '';
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to create post. Please try again.');
+            });
         }
     </script>
 </body>
 
 </html>
-```
